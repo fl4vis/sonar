@@ -41,10 +41,10 @@ func main() {
 		case "+":
 			dir, _ = os.Getwd()
 			configDirFile.AppenToFile(dir)
-			fmt.Println("Succesfully appended file")
 			break
 		case "-":
-			fmt.Println(os.Getwd())
+			dir, _ = os.Getwd()
+			configDirFile.RemoveDirFromFile(dir)
 			break
 		}
 

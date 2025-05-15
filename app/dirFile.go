@@ -52,27 +52,74 @@ func (d DirFile) AppenToFile(path string) {
 	}
 	defer f.Close()
 
-	newPath := path + "\n"
+	result, _ := d.checkExistingDir(path)
 
-	_, err = f.WriteString(newPath)
-	if err != nil {
-		fmt.Println("Error writing to file:", err)
+	if result == false {
+		newPath := path + "\n"
+
+		_, err = f.WriteString(newPath)
+		fmt.Println("Successfully appended dir")
+		os.Exit(0)
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Println("Dir already exists")
+		os.Exit(1)
 	}
 }
 
 func (d DirFile) RemoveDirFromFile(path string) {
-	f, err := os.OpenFile(d.filePath, os.O_APPEND|os.O_RDONLY, 0644)
+
+	// Read all lines
+	file, err := os.Open(d.filePath)
 	if err != nil {
-		fmt.Println("Error opening file for appending:", err)
+		fmt.Println("Error opening file:", err)
 		os.Exit(1)
+		return
 	}
-	defer f.Close()
+	defer file.Close()
 
-	newPath := path + "\n"
+	result, lineToDelete := d.checkExistingDir(path)
 
-	_, err = f.WriteString(newPath)
-	if err != nil {
-		fmt.Println("Error writing to file:", err)
+	if result == true {
+
+		var lines []string
+		scanner := bufio.NewScanner(file)
+		currentLine := 1
+
+		for scanner.Scan() {
+			if currentLine != lineToDelete {
+				lines = append(lines, scanner.Text())
+			}
+			currentLine++
+		}
+
+		if err := scanner.Err(); err != nil {
+			fmt.Println("Error reading file:", err)
+			os.Exit(1)
+		}
+
+		// Write lines back to file
+		outputFile, err := os.Create(d.filePath)
+		if err != nil {
+			fmt.Println("Error creating file:", err)
+			os.Exit(1)
+		}
+		defer outputFile.Close()
+
+		writer := bufio.NewWriter(outputFile)
+		for _, line := range lines {
+			fmt.Fprintln(writer, line)
+		}
+		writer.Flush()
+
+		fmt.Println("Dir deleted successfully")
+		os.Exit(0)
+	} else {
+		fmt.Println("Dir doesn't exist")
+		os.Exit(1)
 	}
 }
 
@@ -103,4 +150,27 @@ func (d DirFile) ReadConfigFile(v *gocui.View) {
 	if prev != "" {
 		fmt.Fprint(v, prev)
 	}
+}
+
+func (d DirFile) checkExistingDir(path string) (bool, int) {
+
+	file, err := os.Open(d.filePath)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	line := 1
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		if scanner.Text() == path {
+			return true, line
+		}
+		line++
+	}
+
+	return false, line
 }
