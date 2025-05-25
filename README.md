@@ -1,7 +1,7 @@
 Compile the program:
 
 ```bash
-go build -o gocd
+go build -o sonar
 ```
 
 Create a shell function in your .bashrc or .zshrc:
