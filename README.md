@@ -8,11 +8,18 @@ Create a shell function in your .bashrc or .zshrc:
 
 ```bash
 sonar() {
-	target_dir="$(./sonar 2>/dev/null)"
-	if [ -n "$target_dir" ]; then
-		cd "$target_dir"
+    target_dir="$(<target_dir> "$@" 2>/dev/null)"
+
+    exit_code=$?
+
+	if [[ -n "$target_dir" && "$exit_code" -eq 100 ]] ; then
+		cd "$target_dir"  || echo "Failed to cd into $target_dir"
+    else 
+       echo "$target_dir"
 	fi
+
 }
+
 ```
 Source your shell configuration:
 
